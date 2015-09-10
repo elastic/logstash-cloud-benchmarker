@@ -1,0 +1,22 @@
+---
+- name: add key server
+  shell: apt-key adv --keyserver keyserver.ubuntu.com --recv-keys EEA14886
+  become: yes
+- name: Install add-apt-repostory
+  apt: name=software-properties-common state=latest
+  become: yes
+- name: Add Oracle Java Repository
+  apt_repository: repo='ppa:webupd8team/java'
+  become: yes
+- name: Accept Java 8 Licence
+  shell: echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | tee /etc/oracle-java-8-licence-acceptance | /usr/bin/debconf-set-selections
+  become: yes
+  args:
+    creates: /etc/oracle-java-8-licence-acceptance
+- name: Install Oracle Java 8
+  apt: name={{item}} state=latest
+  become: yes
+  with_items:
+    - oracle-java8-installer
+    - ca-certificates
+    - oracle-java8-set-default

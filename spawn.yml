@@ -1,0 +1,70 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - aws_vars.yml
+  vars:
+    sg_name: "{{namespace}}_estest"
+    es_lc_name: "{{namespace}}_estest_elasticsearch_lc"
+    ls_lc_name: "{{namespace}}_estest_logstash_lc"
+  tasks:
+    - ec2_group:
+        name: "{{sg_name}}"
+        description: "For testing ES/Logstash"
+        region: "{{ ec2_region }}"
+        vpc_id: "{{ vpc_id }}"
+        rules:
+        - proto: tcp
+          from_port: 22
+          to_port: 22
+          cidr_ip: 0.0.0.0/0
+        - proto: tcp
+          from_port: 9300
+          to_port: 9300
+          group_name: "{{sg_name}}"
+        - proto: tcp
+          from_port: 9200
+          to_port: 9200
+          group_name: "{{sg_name}}"
+      register: es_sg_info
+    - ec2_lc:
+        name: "{{es_lc_name}}"
+        image_id: ami-a1880eca # Ubuntu 14.04 64bit hvm-instance
+        key_name: "{{ ec2_key }}"
+        region: us-east-1
+        security_groups: ["{{es_sg_info.group_id}}"]
+        instance_type: m3.large
+        assign_public_ip: true
+        region: "{{ ec2_region }}"
+    - ec2_asg:
+        name: "{{namespace}}-estest-elasticsearch-asg"
+        launch_config_name: "{{es_lc_name}}"
+        min_size: 0
+        max_size: "{{number_es_instances}}"
+        desired_capacity: "{{number_es_instances}}"
+        region: "{{ ec2_region }}"
+        vpc_zone_identifier: "{{ [vpc_subnet] }}"
+        tags:
+          - Name: "{{namespace}}_test_es"
+            Role: "{{namespace}}_test_elasticsearch"
+    - ec2_lc:
+        name: "{{ls_lc_name}}"
+        image_id: ami-a1880eca # Ubuntu 14.04 64bit hvm-instance
+        key_name: "{{ ec2_key }}"
+        region: us-east-1
+        security_groups: ["{{es_sg_info.group_id}}"]
+        instance_type: m3.large
+        assign_public_ip: true
+        region: "{{ ec2_region }}"
+    - ec2_asg:
+        name: "{{namespace}}-estest-logstash-asg"
+        launch_config_name: "{{ls_lc_name}}"
+        min_size: 0
+        max_size: "{{number_ls_instances}}"
+        desired_capacity: "{{number_ls_instances}}"
+        region: "{{ ec2_region }}"
+        vpc_zone_identifier: "{{ [vpc_subnet] }}"
+        tags:
+          - Name: "{{namespace}}_test_ls"
+            Role: "{{namespace}}_test_logstash"

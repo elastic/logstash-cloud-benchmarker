@@ -1,0 +1,90 @@
+---
+- hosts: tag_aws_autoscaling_groupName_avc_estest_elasticsearch_asg
+  vars:
+    es_version: 2.0.0-beta1
+  tags:
+    -- elasticsearch
+  tasks:
+    - include: install_java.yml
+    - file: path=/mnt/elasticsearch owner=ubuntu group=ubuntu state=directory
+      become: yes
+    - get_url:
+        url: https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch/{{es_version}}/elasticsearch-{{es_version}}.tar.gz
+        dest: /mnt/elasticsearch/elasticsearch-{{es_version}}.tar.gz
+    - shell: tar -xzf elasticsearch-{{es_version}}.tar.gz
+      args:
+        chdir: /mnt/elasticsearch
+        creates: /mnt/elasticsearch/elasticsearch-{{es_version}}
+    - template: src=templates/elasticsearch.yml dest=/mnt/elasticsearch/elasticsearch-{{es_version}}/config/elasticsearch.yml
+    - shell: killall -9 java
+      become: yes
+      ignore_errors: yes
+    - shell: ES_HEAP_SIZE=4g nohup bin/elasticsearch -d # Nohup is needed or it terminates on disconnect
+      args:
+        chdir: /mnt/elasticsearch/elasticsearch-{{es_version}}
+- hosts: tag_aws_autoscaling_groupName_avc_estest_logstash_asg
+  vars:
+    ls_version: 1.5.4
+    ls_dir: /mnt/logstash/logstash-{{ls_version}}
+    ls_benchmarks_dir: "{{ls_dir}}/benchmarks"
+  tags:
+    - logstash
+  tasks:
+    - include: install_java.yml
+    - name: install jq
+      apt:
+        state: present
+        name: jq
+      become: yes
+    - file: path=/mnt/logstash owner=ubuntu group=ubuntu state=directory
+      become: yes
+    - get_url:
+      args:
+        url: https://download.elastic.co/logstash/logstash/logstash-{{ls_version}}.tar.gz
+        dest: /mnt/logstash/logstash-{{ls_version}}.tar.gz
+    - shell: tar -xzf logstash-{{ls_version}}.tar.gz
+      args:
+        chdir: /mnt/logstash
+        creates: "{{ls_dir}}"
+    - template: src=templates/Gemfile dest={{ls_dir}}/Gemfile
+    - name: install new plugins from gemfile
+      shell: bin/plugin install --no-verify
+      args:
+        chdir: /mnt/logstash/logstash-{{ls_version}}
+      become: yes
+    - name: pull sample logs
+      get_url:
+      args:
+        url: https://s3.amazonaws.com/data.elasticsearch.org/apache_logs/apache_access_logs.tar.gz
+        dest: "{{ls_dir}}/logs.gz"
+    - name: double expand the logs
+      shell: gzip -dc logs.gz > logs.combined && gzip -dc logs.gz >> logs.combined
+      args:
+        chdir: "{{ls_dir}}"
+        creates: "{{ls_dir}}/logs.combined"
+    - command: rm -rf {{ls_benchmarks_dir}}
+      tags:
+        - benchmarking
+    - command: ln -sf /lib/x86_64-linux-gnu/libcrypt.so.1 /usr/lib/x86_64-linux-gnu/libcrypt.so
+      become: yes
+    - name: create benchmarks directory
+      file: state=directory path={{ls_benchmarks_dir}}
+      tags:
+        - benchmarking
+    - name:  install benchmark templates
+      template: src=templates/benchmarks/{{item}}.conf dest={{ls_benchmarks_dir}}/{{item}}.conf
+      with_items:
+        - benchmark_http
+        - benchmark_node
+        - benchmark_transport
+        - benchmark_http_3_workers
+        - benchmark_node_3_workers
+        - benchmark_transport_3_workers
+        - benchmark_http_complete
+        - benchmark_transport_complete
+        - benchmark_node_complete
+      tags:
+        - benchmarking
+    - template: src=templates/run_benchmarks.sh dest={{ls_dir}}/run_benchmarks.sh mode=755
+      tags:
+        - benchmarking

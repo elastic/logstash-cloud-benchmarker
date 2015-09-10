@@ -1,0 +1,6 @@
+---
+ec2_region: us-east-1
+ec2_key: mykey
+vpc_id: vpc-123456
+vpc_subnet: subnet-123456
+namespace: foo # A unique value to designate this benchmark stack
