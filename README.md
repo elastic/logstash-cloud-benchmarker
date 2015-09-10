@@ -1,6 +1,6 @@
 # logstash-es-output-benchmarker
 
-You'll need a valid .boto
+You'll need a valid .boto. Copy aws_vars.yml.sample to aws_vars.yml and edit to your preferences.
 
 To use this run `setup.sh`, then run `run_remote_benchmarks.sh`.
 
