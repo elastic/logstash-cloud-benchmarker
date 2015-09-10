@@ -1,4 +1,4 @@
-# logstash-es-output-benchmarker
+# ☁ ⧗
 
 You'll need a valid .boto. Copy aws_vars.yml.sample to aws_vars.yml and edit to your preferences.
 
