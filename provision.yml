@@ -72,7 +72,7 @@
       tags:
         - benchmarking
     - name:  install benchmark templates
-      template: src=templates/benchmarks/{{item}}.conf dest={{ls_benchmarks_dir}}/{{item}}.conf
+      template: src=templates/benchmarks/{{item}} dest={{ls_benchmarks_dir}}/{{item}}
       with_items:
         - benchmark_apachelogs_http.conf
         - benchmark_apachelogs_node.conf

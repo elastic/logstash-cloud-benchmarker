@@ -2,7 +2,7 @@
 
 ES={{ groups['tag_aws_autoscaling_groupName_avc_estest_elasticsearch_asg'][0] }}
 ESURL=http://$ES:9200
-DURATION=1800
+DURATION=600
 WARMUP=60
 
 export LS_HEAP_SIZE=4g
@@ -73,6 +73,7 @@ function run_test {
 
 function process_results {
   print_results > results/summary & # In case this dies on weird input
+  sleep 2 # Hack: Wait for print_results to finish writing
   echo
   echo "---------------"
   echo "*** RESULTS ***"
