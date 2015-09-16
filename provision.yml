@@ -24,7 +24,7 @@
         chdir: /mnt/elasticsearch/elasticsearch-{{es_version}}
 - hosts: tag_aws_autoscaling_groupName_avc_estest_logstash_asg
   vars:
-    ls_version: 1.5.4
+    ls_version: 2.0.0-beta1
     ls_dir: /mnt/logstash/logstash-{{ls_version}}
     ls_benchmarks_dir: "{{ls_dir}}/benchmarks"
   tags:
@@ -74,15 +74,15 @@
     - name:  install benchmark templates
       template: src=templates/benchmarks/{{item}}.conf dest={{ls_benchmarks_dir}}/{{item}}.conf
       with_items:
-        - benchmark_http
-        - benchmark_node
-        - benchmark_transport
-        - benchmark_http_3_workers
-        - benchmark_node_3_workers
-        - benchmark_transport_3_workers
-        - benchmark_http_complete
-        - benchmark_transport_complete
-        - benchmark_node_complete
+        - benchmark_apachelogs_http.conf
+        - benchmark_apachelogs_node.conf
+        - benchmark_apachelogs_transport.conf
+        - benchmark_simpleX3_http.conf
+        - benchmark_simpleX3_node.conf
+        - benchmark_simpleX3_transport.conf
+        - benchmark_simple_http.conf
+        - benchmark_simple_node.conf
+        - benchmark_simple_transport.conf
       tags:
         - benchmarking
     - template: src=templates/run_benchmarks.sh dest={{ls_dir}}/run_benchmarks.sh mode=755

@@ -6,8 +6,9 @@
     - aws_vars.yml
   vars:
     sg_name: "{{namespace}}_estest"
-    es_lc_name: "{{namespace}}_estest_elasticsearch_lc"
-    ls_lc_name: "{{namespace}}_estest_logstash_lc"
+    es_lc_name: "{{namespace}}_estest_elasticsearch_lc2"
+    ls_lc_name: "{{namespace}}_estest_logstash_lc2"
+    ami: ami-616b0504
   tasks:
     - ec2_group:
         name: "{{sg_name}}"
@@ -30,7 +31,7 @@
       register: es_sg_info
     - ec2_lc:
         name: "{{es_lc_name}}"
-        image_id: ami-a1880eca # Ubuntu 14.04 64bit hvm-instance
+        image_id: "{{ami}}"
         key_name: "{{ ec2_key }}"
         region: us-east-1
         security_groups: ["{{es_sg_info.group_id}}"]
@@ -50,7 +51,7 @@
             Role: "{{namespace}}_test_elasticsearch"
     - ec2_lc:
         name: "{{ls_lc_name}}"
-        image_id: ami-a1880eca # Ubuntu 14.04 64bit hvm-instance
+        image_id: "{{ami}}"
         key_name: "{{ ec2_key }}"
         region: us-east-1
         security_groups: ["{{es_sg_info.group_id}}"]
